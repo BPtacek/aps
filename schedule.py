@@ -1,4 +1,5 @@
 import requests, api_calls
+from datetime import date
 
 #parsing the api call response into two main dicts: dates and games. Dates contains dates, games contains teams, their season record, status, gameid, score if game already played/in progress
 def parse_strings(data):
@@ -14,9 +15,16 @@ def parse_strings(data):
             status = game["status"]["detailedState"]
             if status != "Scheduled":
                 score = "{:>} : {:<2}".format(game["teams"]["home"]["score"], game["teams"]["away"]["score"])
+                basic_game_data = api_calls.make_call(game["link"].lstrip("/api/v1/"), {})
+                czechs = [" - ".join([basic_game_data["gameData"]["players"][player]["fullName"], basic_game_data["gameData"]["players"][player]["currentTeam"]["triCode"]]) for player in basic_game_data["gameData"]["players"] if basic_game_data["gameData"]["players"][player]["nationality"] == "CZE"]
             else:
                 score = "- : -"
-            games[date["date"]].setdefault(str(len(games[date["date"]])), (opponents, records, status, gameID, score))
+                czechs = ["Czech players not confirmed yet"]
+            if czechs:
+                czechs = ", ".join(czechs)
+            else:
+                czechs = "no czechs"
+            games[date["date"]].setdefault(str(len(games[date["date"]])), {"opponents" : opponents, "records" : records, "status" : status, "gameID" : gameID, "score" : score, "czechs" : czechs})
 
     return dates, games
 
@@ -26,9 +34,9 @@ def display_schedule(data):
     for day in range(len(schedule[0])):
         playday = schedule[0][str(day)]
         gamedate = schedule[1][playday]
-        print("\n", 73*"=", "\n", "{:^70}".format(playday), "\n", 73*"=", "\n")
-        for game in range(len(schedule[1][playday])):
-            print(gamedate[str(game)][0] + " "*10 + gamedate[str(game)][2] , gamedate[str(game)][1] + " "*19 + gamedate[str(game)][4], sep = "\n")
+        print("\n", 84*"=", "\n", "{:^70}".format(playday), "\n", 84*"=", "\n")
+        for game in range(len(gamedate)):
+            print(gamedate[str(game)]["opponents"] + " "*10 + gamedate[str(game)]["status"] , gamedate[str(game)]["records"] + " "*19 + gamedate[str(game)]["score"], "{:^51}".format(gamedate[str(game)]["czechs"]), sep = "\n")
 
 #function to run the api call and collecting the result
 def fetch_data(params):
@@ -43,8 +51,9 @@ def collect_inputs():
         entry = input('Enter the parameter:\n\n')
         inputs[input_type] = entry
     if inputs:
-            print(inputs)
-    return inputs
+        return inputs
+    else:
+        return {"date" : str(date.today())}
 
 #main function running the whole thing
 def main():
@@ -53,3 +62,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    input()
