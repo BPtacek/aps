@@ -20,9 +20,14 @@ def parse_strings(data):
         for game in date["games"]:
             opponents = "{:^24}  -  {:^24}".format(game["teams"]["home"]["team"]["name"],
                                                    game["teams"]["away"]["team"]["name"])
-            records = "{wins:>9}-{losses:0>2}-{ot:0>2}".format(
-                **game["teams"]["home"]["leagueRecord"]) + " " + "{wins:>22}-{losses:0>2}-{ot:0>2}".format(
-                **game["teams"]["away"]["leagueRecord"])
+            try:
+                records = "{wins:>9}-{losses:0>2}-{ot:0>2}".format(
+                    **game["teams"]["home"]["leagueRecord"]) + " " + "{wins:>22}-{losses:0>2}-{ot:0>2}".format(
+                    **game["teams"]["away"]["leagueRecord"])
+            except:
+                records = "{wins:>9}-{losses:0>2}".format(
+                    **game["teams"]["home"]["leagueRecord"]) + " " + "{wins:>22}-{losses:0>2}".format(
+                    **game["teams"]["away"]["leagueRecord"])
             gameID = game["link"].lstrip('/api/v1/')
             status = game["status"]["detailedState"]
             if status != "Scheduled":
@@ -32,9 +37,10 @@ def parse_strings(data):
                     czechs = [" - ".join([basic_game_data["gameData"]["players"][player]["fullName"],
                                           basic_game_data["gameData"]["players"][player]["currentTeam"]["triCode"]]) for
                               player in basic_game_data["gameData"]["players"] if
-                              basic_game_data["gameData"]["players"][player]["nationality"] == "CZE"]
-                except:
+                              basic_game_data["gameData"]["players"][player].get("nationality") == "CZE"]
+                except Exception as oops:
                     czechs = ["Cannot retrieve all nationality data"]
+                    print('Oops - ', oops)
             else:
                 score = "- : -"
                 czechs = ["Czech players not confirmed yet"]
